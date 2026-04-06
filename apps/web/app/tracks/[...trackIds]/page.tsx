@@ -6,6 +6,22 @@ import { cache } from "react";
 import { LessonView } from "../../../components/LessonView";
 
 const notion = new NotionAPI();
+
+function normalizeRecordMap(recordMap: any) {
+  if (!recordMap?.block) return recordMap;
+  const normalizedBlock: any = {};
+  for (const [key, block] of Object.entries(recordMap.block) as any) {
+    if (!block?.value) {
+      continue;
+    }
+    if (block.value.value?.type) {
+      normalizedBlock[key] = { ...block, value: block.value.value };
+    } else {
+      normalizedBlock[key] = block;
+    }
+  }
+  return { ...recordMap, block: normalizedBlock };
+}
 export const dynamic = "auto";
 // Dynamic Metadata
 export async function generateMetadata({ params }: { params: { trackIds: string[] } }) {
@@ -80,7 +96,7 @@ export default async function TrackComponent({ params }: { params: { trackIds: s
   }
 
   if (problemDetails?.notionDocId) {
-    notionRecordMap = await notion.getPage(problemDetails.notionDocId);
+    notionRecordMap = normalizeRecordMap(await notion.getPage(problemDetails.notionDocId));
   }
 
   if (trackDetails && problemDetails) {
