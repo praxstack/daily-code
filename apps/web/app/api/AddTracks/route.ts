@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { NotionAPI } from "notion-client";
+import { fetchNotionPage, getNotionClient } from "../../../lib/notion";
 import { authOptions } from "../../../lib/auth";
 
 export async function POST(req: NextRequest) {
@@ -11,9 +11,12 @@ export async function POST(req: NextRequest) {
   }
   const body = await req.json();
   const notionId = body.notionId;
-  const notion = new NotionAPI();
+  const notion = getNotionClient();
   try {
-    const recordMap = await notion.getPage(notionId);
+    const recordMap = await fetchNotionPage(notion, notionId);
+    if (!recordMap?.block) {
+      return NextResponse.json({ message: "Failed to load Notion page" }, { status: 502 });
+    }
     const data = Object.keys(recordMap.block).filter((key) => {
       const block = recordMap.block[key];
       return block?.role !== "none"
